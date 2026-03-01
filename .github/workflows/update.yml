@@ -5,9 +5,15 @@ on:
     - cron: "0 6 * * *" # daily at 06:00 UTC
   workflow_dispatch: # manual trigger
 
+permissions:
+  contents: write
+
 jobs:
   update:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      updated: ${{ steps.check.outputs.update }}
     steps:
       - uses: actions/checkout@v4
 
@@ -40,9 +46,7 @@ jobs:
           ARM64_SRI=$(to_sri "$ARM64_HEX")
 
           sed -i "s|version = \".*\"; # auto-updated|version = \"$VERSION\"; # auto-updated|" flake.nix
-          # Update x86_64 hash (first occurrence)
           sed -i "0,/hash = \"sha256-.*\"; # auto-updated/{s|hash = \"sha256-.*\"; # auto-updated|hash = \"$X64_SRI\"; # auto-updated|}" flake.nix
-          # Update aarch64 hash (second occurrence)
           sed -i "0,/hash = \"sha256-.*\"; # auto-updated/! { s|hash = \"sha256-.*\"; # auto-updated|hash = \"$ARM64_SRI\"; # auto-updated| }" flake.nix
 
           echo "Updated to $VERSION"
@@ -56,13 +60,19 @@ jobs:
           git commit -m "update claude-code to ${{ steps.check.outputs.latest }}"
           git push
 
+      - name: Get current version
+        id: version
+        run: |
+          VERSION=$(grep 'version = "' flake.nix | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
   build:
     needs: update
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main # get latest (possibly just updated)
+          ref: main
 
       - uses: cachix/install-nix-action@v31
 
@@ -70,5 +80,26 @@ jobs:
         run: nix build .#packages.x86_64-linux.claude-code --print-out-paths
 
       - name: Verify
+        run: ./result/bin/claude --version
+
+  release:
+    needs: [update, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          ./result/bin/claude --version
+          VERSION="v${{ needs.update.outputs.version }}"
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            echo "Release $VERSION already exists, skipping"
+          else
+            gh release create "$VERSION" \
+              --title "Claude Code ${{ needs.update.outputs.version }}" \
+              --notes "Auto-updated Claude Code to ${{ needs.update.outputs.version }}" \
+              --latest
+          fi
