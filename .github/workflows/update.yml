@@ -55,3 +55,20 @@ jobs:
           git add flake.nix
           git commit -m "update claude-code to ${{ steps.check.outputs.latest }}"
           git push
+
+  build:
+    needs: update
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main # get latest (possibly just updated)
+
+      - uses: cachix/install-nix-action@v31
+
+      - name: Build x86_64-linux
+        run: nix build .#packages.x86_64-linux.claude-code --print-out-paths
+
+      - name: Verify
+        run: |
+          ./result/bin/claude --version
