@@ -90,6 +90,24 @@ jobs:
         with:
           ref: main
 
+      - name: Fetch upstream changelog
+        id: changelog
+        run: |
+          VERSION="${{ needs.update.outputs.version }}"
+          BODY=$(curl -fsSL "https://api.github.com/repos/anthropics/claude-code/releases/tags/v${VERSION}" \
+            | jq -r '.body // empty') || true
+          {
+            echo "notes<<CHANGELOG_EOF"
+            echo "Auto-updated Claude Code to ${VERSION}"
+            if [ -n "$BODY" ]; then
+              echo ""
+              echo "## Upstream Changelog"
+              echo ""
+              echo "$BODY"
+            fi
+            echo "CHANGELOG_EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -100,6 +118,6 @@ jobs:
           else
             gh release create "$VERSION" \
               --title "Claude Code ${{ needs.update.outputs.version }}" \
-              --notes "Auto-updated Claude Code to ${{ needs.update.outputs.version }}" \
+              --notes "${{ steps.changelog.outputs.notes }}" \
               --latest
           fi
