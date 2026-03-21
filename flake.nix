@@ -7,15 +7,15 @@
     self,
     nixpkgs,
   }: let
-    version = "2.1.80"; # auto-updated
+    version = "2.1.81"; # auto-updated
     platforms = {
       "x86_64-linux" = {
         platform = "linux-x64";
-        hash = "sha256-Sfo896qrnVQGboXqoRkRt9JcYpqCrzI6drItsgKdT6I="; # auto-updated
+        hash = "sha256-BH4/VZHWI4sI3ZUYcprDNbDo3xyA/pheXX+9osGPwoE="; # auto-updated
       };
       "aarch64-linux" = {
         platform = "linux-arm64";
-        hash = "sha256-gol9Xs1VpGakcWGyG0FwdegUnKgWABuhV5b/BTca/dU="; # auto-updated
+        hash = "sha256-zPw4RcjRot7ZZWo6UXaUqEShtwBbh8eEpm96YMxYASw="; # auto-updated
       };
     };
     bucket = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases";
