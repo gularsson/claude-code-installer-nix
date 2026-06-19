@@ -15,7 +15,7 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       updated: ${{ steps.check.outputs.update }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Check for update
         id: check
@@ -70,7 +70,7 @@ jobs:
     needs: update
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: main
 
@@ -86,7 +86,7 @@ jobs:
     needs: [update, build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: main
 
